@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ქვეწარმავლების ტემპერატურის მარეგულირებელი და მამოძრავებელი სისტემა</title>
+    <style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #ffffff;
+    overflow-x: hidden;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    padding: 1rem;
+    gap: 1rem;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+#canvas {
+    border: 2px solid #333;
+    background-color: #ffffff;
+    flex: 2;
+    max-width: 70%;
+    height: 92vh;
+    position: relative;
+    /* Center the scene within the canvas */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* Important for scaled content */
+}
+
+.controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    max-width: 30%;
+}
+
+h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+button, select, input {
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+button:hover, select:hover, input:hover {
+    background-color: #ffffff;
+}
+
+label {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.status {
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: #333;
+}
+
+.scene {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px; 
+    height: 300px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center center; 
+    transition: transform 0.3s ease-out; 
+}
+
+.water-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+}
+
+.water-overlay.active {
+    opacity: 1;
+}
+
+.ripple-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+}
+
+.ripple-container.active {
+    opacity: 1;
+}
+
+.ripple {
+    position: absolute;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    animation: rippleEffect 3s ease-out infinite;
+    pointer-events: none;
+}
+
+.ripple:nth-child(1) {
+    top: 30%;
+    left: 20%;
+    animation-delay: 0s;
+}
+
+.ripple:nth-child(2) {
+    top: 60%;
+    left: 70%;
+    animation-delay: 1s;
+}
+
+.ripple:nth-child(3) {
+    top: 20%;
+    right: 15%;
+    animation-delay: 2s;
+}
+
+.ripple:nth-child(4) {
+    bottom: 20%;
+    left: 30%;
+    animation-delay: 0.5s;
+}
+
+.ripple:nth-child(5) {
+    top: 70%;
+    left: 50%;
+    animation-delay: 1.5s;
+}
+
+.ripple:nth-child(6) {
+    top: 40%;
+    left: 80%;
+    animation-delay: 2.5s;
+}
+
+@keyframes rippleEffect {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 1;
+        border-width: 3px;
+    }
+    50% {
+        opacity: 0.6;
+        border-width: 2px;
+    }
+    100% {
+        width: 120px;
+        height: 120px;
+        opacity: 0;
+        border-width: 1px;
+    }
+}
+
+.bubble {
+    position: absolute;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.2));
+    border-radius: 50%;
+    animation: floatUp linear infinite;
+    pointer-events: none;
+}
+
+.bubble:nth-child(7) {
+    width: 8px;
+    height: 8px;
+    left: 15%;
+    animation-duration: 4s;
+    animation-delay: 0s;
+}
+
+.bubble:nth-child(8) {
+    width: 12px;
+    height: 12px;
+    left: 85%;
+    animation-duration: 6s;
+    animation-delay: 1s;
+}
+
+.bubble:nth-child(9) {
+    width: 6px;
+    height: 6px;
+    left: 60%;
+    animation-duration: 5s;
+    animation-delay: 2s;
+}
+
+.bubble:nth-child(10) {
+    width: 10px;
+    height: 10px;
+    left: 40%;
+    animation-duration: 7s;
+    animation-delay: 3s;
+}
+
+@keyframes floatUp {
+    0% {
+        bottom: -20px;
+        opacity: 0;
+        transform: translateX(0px);
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        bottom: 100%;
+        opacity: 0;
+        transform: translateX(20px);
+    }
+}
+
+.lily-pad {
+    position: absolute;
+    background: radial-gradient(ellipse at 30% 30%, #90EE90, #228B22);
+    border-radius: 50% 10% 50% 50%;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.lily-pad::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 3px;
+    background: #228B22;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.main-lily-pad {
+    width: 200px;
+    height: 200px;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    
+}
+
+.main-lily-pad::before {
+    height: 70px;
+}
+
+.lily-pad-2 {
+    width: 120px;
+    height: 120px;
+    bottom: 100px;
+    left: -60px;
+    transform: rotate(-25deg);
+    background: radial-gradient(ellipse at 40% 40%, #98FB98, #32CD32);
+}
+
+.lily-pad-2::before {
+    height: 40px;
+    transform: translate(-50%, -50%) rotate(30deg);
+}
+
+.lily-pad-3 {
+    width: 140px;
+    height: 140px;
+    bottom: 80px;
+    right: -70px;
+    transform: rotate(35deg);
+    background: radial-gradient(ellipse at 25% 35%, #ADFF2F, #228B22);
+}
+
+.lily-pad-3::before {
+    height: 45px;
+    transform: translate(-50%, -50%) rotate(-20deg);
+}
+
+.frog {
+    position: relative;
+    z-index: 10;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+}
+
+.frog-body {
+    width: 120px;
+    height: 90px;
+    background: radial-gradient(ellipse at 40% 30%, #32CD32, #228B22);
+    border-radius: 50% 50% 70% 70%;
+    position: relative;
+    box-shadow: inset 0 -20px 40px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.skin-breathing {
+    animation: skinGlow 3s ease-in-out infinite;
+}
+
+@keyframes skinGlow {
+    0%, 100% { 
+        box-shadow: inset 0 -20px 40px rgba(0,0,0,0.2), 0 0 30px rgba(50, 205, 50, 0.3);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: inset 0 -20px 40px rgba(0,0,0,0.2), 0 0 60px rgba(50, 205, 50, 0.8);
+        transform: scale(1.06);
+    }
+}
+
+.frog-belly {
+    position: absolute;
+    width: 70px;
+    height: 50px;
+    background: radial-gradient(ellipse, #90EE90, #7CFC00);
+    border-radius: 50%;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: inset 0 10px 20px rgba(255,255,255,0.3);
+    transition: all 0.4s ease;
+}
+
+.frog-head {
+    position: absolute;
+    width: 110px;
+    height: 70px;
+    background: radial-gradient(ellipse at 40% 40%, #32CD32, #228B22);
+    border-radius: 55px 55px 40px 40px;
+    top: -35px;
+    left: 5px;
+    z-index: 2;
+}
+
+.eye {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: radial-gradient(circle at 30% 30%, #32CD32, #228B22);
+    border-radius: 50%;
+    top: -15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.eye-left { left: 15px; }
+.eye-right { right: 15px; }
+
+.eye::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: radial-gradient(circle at 30% 30%, #000, #333);
+    border-radius: 50%;
+    top: 6px;
+    left: 6px;
+}
+
+.eye::after {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: #fff;
+    border-radius: 50%;
+    top: 8px;
+    left: 10px;
+    z-index: 3;
+}
+
+.throat-sac {
+    position: absolute;
+    width: 40px;
+    height: 20px;
+    background: radial-gradient(ellipse, rgba(144, 238, 144, 0.8), rgba(50, 205, 50, 0.6));
+    border-radius: 50%;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+.mouth {
+    position: absolute;
+    width: 55px;
+    height: 10px;
+    border: 2px solid #1a5d1a;
+    border-top: none;
+    border-radius: 0 0 28px 28px;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom, #FF69B4, #FFB6C1);
+    transition: all 0.3s ease;
+}
+
+.mouth-breathing {
+    animation: mouthBreathe 2s ease-in-out infinite;
+}
+
+@keyframes mouthBreathe {
+    0%, 100% { 
+        height: 10px;
+        bottom: 15px;
+    }
+    50% { 
+        height: 18px;
+        bottom: 12px;
+    }
+}
+
+.front-leg {
+    position: absolute;
+    width: 25px;
+    height: 60px;
+    background: linear-gradient(45deg, #32CD32, #228B22);
+    border-radius: 12px;
+    top: 55px;
+    z-index: 2;
+}
+
+.front-leg-left {
+    left: 10px;
+    transform: rotate(-35deg);
+}
+
+.front-leg-right {
+    right: 10px;
+    transform: rotate(35deg);
+}
+
+.hand {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, #32CD32, #228B22);
+    border-radius: 50% 40% 50% 40%;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+}
+
+.back-leg {
+    position: absolute;
+    width: 40px;
+    height: 30px;
+    background: linear-gradient(135deg, #32CD32, #228B22);
+    border-radius: 20px;
+    bottom: -5px;
+    z-index: 0;
+}
+
+.back-leg-left {
+    left: -15px;
+    transform: rotate(-30deg);
+}
+
+.back-leg-right {
+    right: -15px;
+    transform: rotate(30deg);
+}
+
+.foot {
+    position: absolute;
+    width: 35px;
+    height: 18px;
+    background: radial-gradient(ellipse, #32CD32, #228B22);
+    border-radius: 18px 18px 10px 10px;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.oxygen {
+    background: radial-gradient(circle, #4A90E2, #2E5BBA);
+    animation: oxygenFlow 3s ease-in-out infinite;
+}
+
+.co2 {
+    background: radial-gradient(circle, #FF6B6B, #E74C3C);
+    animation: co2Flow 3s ease-in-out infinite;
+}
+
+@keyframes oxygenFlow {
+    0% { 
+        opacity: 0;
+        transform: translate(0, 0) scale(0.5);
+    }
+    50% { 
+        opacity: 1;
+        transform: translate(-15px, -20px) scale(1);
+    }
+    100% { 
+        opacity: 0;
+        transform: translate(-30px, -40px) scale(0.5);
+    }
+}
+
+@keyframes co2Flow {
+    0% { 
+        opacity: 0;
+        transform: translate(-30px, -40px) scale(0.5);
+    }
+    50% { 
+        opacity: 1;
+        transform: translate(-15px, -20px) scale(1);
+    }
+    100% { 
+        opacity: 0;
+        transform: translate(0, 0) scale(0.5);
+    }
+}
+
+@keyframes skinOxygenFlow {
+    0% { 
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    25% { 
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    75% { 
+        opacity: 0.4;
+        transform: scale(0.8);
+    }
+    100% { 
+        opacity: 0;
+        transform: scale(0.3);
+    }
+}
+
+@media (max-width: 992px) {
+    .container {
+        padding: 0.8rem;
+        gap: 0.8rem;
+    }
+    #canvas {
+        max-width: 65%;
+    }
+    .controls {
+        max-width: 35%;
+    }
+    .scene {
+        transform: translate(-50%, -50%) scale(0.85);
+    }
+    
+    .lily-pad-2 {
+        left: -10px;
+        bottom: 70px;
+    }
+    .lily-pad-3 {
+        right: -20px;
+        bottom: 50px;
+    }
+    
+    h2 {
+        font-size: 1.1rem;
+    }
+    button, select, input {
+        font-size: 0.95rem;
+        padding: 0.45rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+    #canvas, .controls {
+        max-width: 100%;
+        flex: none;
+    }
+    #canvas {
+        height: 50vh;
+    }
+    .controls {
+        padding: 1rem;
+    }
+    h2 {
+        font-size: 1rem;
+    }
+    button, select, input {
+        font-size: 0.9rem;
+        padding: 0.4rem;
+    }
+    .scene {
+        transform: translate(-50%, -50%) scale(0.7);
+    }
+    
+    .lily-pad-2 {
+        width: 100px;
+        height: 100px;
+        left: 0px;
+        bottom: 60px;
+    }
+    .lily-pad-2::before {
+        height: 35px;
+    }
+    .lily-pad-3 {
+        width: 110px;
+        height: 110px;
+        right: -10px;
+        bottom: 45px;
+    }
+    .lily-pad-3::before {
+        height: 38px;
+    }
+}
+
+@media (max-width: 480px) {
+    #canvas {
+        height: 40vh;
+    }
+    .controls {
+        padding: 0.5rem;
+        gap: 0.8rem;
+    }
+    button, select, input {
+        font-size: 0.85rem;
+    }
+    h2 {
+        font-size: 0.95rem;
+    }
+    .scene {
+        transform: translate(-50%, -50%) scale(0.55);
+    }
+    
+    .main-lily-pad {
+        width: 160px;
+        height: 160px;
+    }
+    .main-lily-pad::before {
+        height: 55px;
+    }
+    .lily-pad-2 {
+        width: 80px;
+        height: 80px;
+        left: 5px;
+        bottom: 50px;
+    }
+    .lily-pad-2::before {
+        height: 28px;
+    }
+    .lily-pad-3 {
+        width: 90px;
+        height: 90px;
+        right: 0px;
+        bottom: 35px;
+    }
+    .lily-pad-3::before {
+        height: 30px;
+    }
+}
+
+#logo {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 100px; 
+    height: auto; 
+    z-index: 10; 
+}
+
+@media (max-width: 768px) {
+    #logo {
+        width: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    #logo {
+        width: 60px;
+        top: 5px;
+        left: 5px;
+    }
+}
+    </style>
+</head>
+<body>
+     <img id="logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAYAAACtWK6eAAAACXBIWXMAAC4jAAAuIwF4pT92AAAEt2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSfvu78nIGlkPSdXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQnPz4KPHg6eG1wbWV0YSB4bWxuczp4PSdhZG9iZTpuczptZXRhLyc+CjxyZGY6UkRGIHhtbG5zOnJkZj0naHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyc+CgogPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9JycKICB4bWxuczpBdHRyaWI9J2h0dHA6Ly9ucy5hdHRyaWJ1dGlvbi5jb20vYWRzLzEuMC8nPgogIDxBdHRyaWI6QWRzPgogICA8cmRmOlNlcT4KICAgIDxyZGY6bGkgcmRmOnBhcnNlVHlwZT0nUmVzb3VyY2UnPgogICAgIDxBdHRyaWI6Q3JlYXRlZD4yMDI1LTA1LTI0PC9BdHRyaWI6Q3JlYXRlZD4KICAgICA8QXR0cmliOkV4dElkPmZiNWFiM2MwLWFkMTItNDcyZi04N2FjLTIyNmU3YzJhMWVhYzwvQXR0cmliOkV4dElkPgogICAgIDxBdHRyaWI6RmJJZD41MjUyNjU5MTQxNzk1ODA8L0F0dHJpYjpGYklkPgogICAgIDxBdHRyaWI6VG91Y2hUeXBlPjI8L0F0dHJpYjpUb3VjaFR5cGU+CiAgICA8L3JkZjpsaT4KICAgPC9yZGY6U2VxPgogIDwvQXR0cmliOkFkcz4KIDwvcmRmOkRlc2NyaXB0aW9uPgoKIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PScnCiAgeG1sbnM6ZGM9J2h0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvJz4KICA8ZGM6dGl0bGU+CiAgIDxyZGY6QWx0PgogICAgPHJkZjpsaSB4bWw6bGFuZz0neC1kZWZhdWx0Jz5VbnRpdGxlZCBkZXNpZ24gLSAxPC9yZGY6bGk+CiAgIDwvcmRmOkFsdD4KICA8L2RjOnRpdGxlPgogPC9yZGY6RGVzY3JpcHRpb24+CgogPHJkZjpEZXNjcmlwdGlv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" alt="Logo">
+    <div class="container">
+        <div id="canvas">
+            <div class="scene">
+                <div class="water-overlay" id="waterOverlay"></div>
+                
+                <div class="ripple-container" id="rippleContainer">
+                    <div class="ripple"></div>
+                    <div class="ripple"></div>
+                    <div class="ripple"></div>
+                    <div class="ripple"></div>
+                    <div class="ripple"></div>
+                    <div class="ripple"></div>
+                    <!-- Floating bubbles -->
+                    <div class="bubble"></div>
+                    <div class="bubble"></div>
+                    <div class="bubble"></div>
+                    <div class="bubble"></div>
+                </div>
+                
+                <!-- Three lily pads with different sizes and positions -->
+                <div class="lily-pad main-lily-pad"></div>
+                <div class="lily-pad lily-pad-2"></div>
+                <div class="lily-pad lily-pad-3"></div>
+                
+                <div class="frog" id="frog">
+                    
+                    <div class="frog-body" id="frogBody">
+                        <div class="frog-belly" id="frogBelly"></div>
+                        <div class="throat-sac" id="throatSac"></div>
+                        
+                        <div class="frog-head">
+                            <div class="eye eye-left"></div>
+                            <div class="eye eye-right"></div>
+                            <div class="mouth" id="mouth">
+                                <!-- Mouth breathing particles -->
+                                <div class="particle oxygen" style="top: 3px; left: 15px; animation-delay: 0s;"></div>
+                                <div class="particle oxygen" style="top: 3px; left: 25px; animation-delay: 0.3s;"></div>
+                                <div class="particle oxygen" style="top: 3px; right: 15px; animation-delay: 0.6s;"></div>
+                                <div class="particle co2" style="top: 3px; left: 20px; animation-delay: 1.5s;"></div>
+                                <div class="particle co2" style="top: 3px; right: 20px; animation-delay: 1.8s;"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="front-leg front-leg-left">
+                            <div class="hand"></div>
+                        </div>
+                        <div class="front-leg front-leg-right">
+                            <div class="hand"></div>
+                        </div>
+                        
+                        <div class="back-leg back-leg-left">
+                            <div class="foot"></div>
+                        </div>
+                        <div class="back-leg back-leg-right">
+                            <div class="foot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="controls">
+            <h2>🐸 ბაყაყის მდგომარეობა:</h2>
+            <select id="frogState" onchange="changeFrogState()">
+                <option value="underwater">🌊 წყლის ქვეშ</option>
+                <option value="out">🌿 წყლის გარეთ</option>
+            </select>
+
+            <h2>☀️ გარემოს ტემპერატურა</h2>
+            <label for="envTemp">ტემპერატურა (0-45°C):</label>
+            <input type="range" id="envTemp" min="0" max="45" value="25" oninput="updateEnvTemp()">
+            <div id="envTempDisplay">გარემო: 25°C</div>
+            <div id="bodyTempDisplay">სხეულის T: 25°C</div>
+
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        let envTemp = 25;
+        let bodyTemp = 25;
+        let positionX = 50;
+        let time = 0;
+
+        // Frog elements
+        const frog = document.getElementById('frog');
+        const frogBody = document.getElementById('frogBody');
+        const frogBelly = document.getElementById('frogBelly');
+        const mouth = document.getElementById('mouth');
+        const throatSac = document.getElementById('throatSac');
+        const waterOverlay = document.getElementById('waterOverlay');
+        const rippleContainer = document.getElementById('rippleContainer');
+
+        function updateEnvTemp() {
+            envTemp = parseInt(document.getElementById('envTemp').value);
+            document.getElementById('envTempDisplay').textContent = `გარემო: ${envTemp}°C`;
+        }
+
+        function updateBodyTemp() {
+            const lag = 0.01;
+            bodyTemp += (envTemp - bodyTemp) * lag;
+            document.getElementById('bodyTempDisplay').textContent = `სხეულის T: ${bodyTemp.toFixed(1)}°C`;
+        }
+
+        function changeFrogState() {
+            const state = document.getElementById('frogState').value;
+            clearModes();
+            
+            if (state === 'underwater') {
+                // Water mode - skin breathing
+                canvas.style.backgroundColor = '#1d4ed8';
+                frogBody.classList.add('skin-breathing');
+                throatSac.style.opacity = '1';
+                
+                // Show water effects
+                waterOverlay.classList.add('active');
+                rippleContainer.classList.add('active');
+                
+                // Hide all lily pads when underwater
+                document.querySelectorAll('.lily-pad').forEach(pad => {
+                    pad.style.display = 'none';
+                });
+                
+            } else {
+                // Land mode - mouth breathing
+                canvas.style.backgroundColor = '#3c78d8';
+                mouth.classList.add('mouth-breathing');
+                throatSac.style.opacity = '1';
+                frogBody.classList.add('skin-breathing');
+                
+                // Show mouth particles
+                const mouthParticles = mouth.querySelectorAll('.particle');
+                mouthParticles.forEach(p => p.style.display = 'block');
+                
+                // Show all lily pads when on land
+                document.querySelectorAll('.lily-pad').forEach(pad => {
+                    pad.style.display = 'block';
+                });
+            }
+        }
+
+        function clearModes() {
+            mouth.classList.remove('mouth-breathing');
+            frogBody.classList.remove('skin-breathing');
+            waterOverlay.classList.remove('active');
+            rippleContainer.classList.remove('active');
+            
+            // Hide particles
+            const particles = document.querySelectorAll('.particle');
+            particles.forEach(p => p.style.display = 'none');
+        }
+
+        function animate() {
+            updateBodyTemp();
+            requestAnimationFrame(animate);
+        }
+
+        // Initialize
+        animate();
+        changeFrogState(); // Set initial state
+    </script>
+
+</body>
+</html>
